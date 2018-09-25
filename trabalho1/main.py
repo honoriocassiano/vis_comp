@@ -5,31 +5,6 @@ import numpy as np
 np.set_printoptions(suppress=True)
 
 
-def apply_transform(src, m):
-	dst = np.zeros(src.shape)
-
-	height, width = src.shape[:2]
-
-	points = np.mgrid[0:height,0:width]
-	points = np.dstack((points[0],
-				points[1],
-				np.ones(points[0].shape))
-		).reshape((height * width, 3)).astype(int)
-
-	points_ = m @ points.T
-
-	# Converte as coordenadas homogêneas
-	points_ = np.round(points_[:2, :] / points_[2, :]).astype(int)
-
-	# Calcula o resto para não perder informações dos pontos < 0
-	points_[0, :] = np.remainder(points_[0, :], height)
-	points_[1, :] = np.remainder(points_[1, :], width)
-
-	dst = src[[points_[0, :], points_[1, :]]].reshape((height, width, 3))
-
-	return dst
-
-
 def main():
 
 	points_img = [[ 496, 2185 ], [3940, 2236], [3125, 1060], [1055, 975]]
@@ -123,55 +98,16 @@ def main():
 		if temp[1] > max_bounds[1]:
 			max_bounds[1] = temp[1]
 
-	# print(min_bounds, max_bounds)
-	# print('')
-	
 	scale = src.shape[0]/ (max_bounds[0] - min_bounds[0])
 	transform = np.identity(3)
 
-
-
-
-	transform[:2, 2] = [1000, 500]
-	# transform[:2, 2] = [-min_bounds[0], -min_bounds[1]]
-	# transform = h_inv @ transform
-
-	# print(transform)
-
-	# transform[:2, 2] = [-min_bounds[0] + 496, -min_bounds[1]]
-	# transform[:2, 2] = [-min_bounds[0], -min_bounds[1]]
-	# transform[0, 0] = transform[1, 1] = 2
-
-	# transform = h @ np.linalg.inv(transform)
-	# transform = h @ transform
-
-	# transform = np.linalg.inv(transform)
-
-	# print(transform)
-
-	# transform[:, 2] = [1, 1, 1]
-
-
-
-	# dst = apply_transform(src, h_inv)
+	# transform[:2, 2] = [1000, 500]
 
 	dst = cv2.warpPerspective(src, transform, dsize=(src.shape[1], src.shape[0]))
 
-	# dst = cv2.warpPerspective(src, transform, dsize=(src.shape[1], src.shape[0]), borderMode=cv2.BORDER_WRAP)
-	# # dst = cv2.warpPerspective(src, h_inv @ transform, dsize=(src.shape[1], src.shape[0]), borderMode=cv2.BORDER_WRAP)
 
 	dst = cv2.warpPerspective(dst, h_inv, dsize=(src.shape[1], src.shape[0]))
-	# dst = cv2.warpPerspective(src, h_inv, dsize=(src.shape[1], src.shape[0]), borderMode=cv2.BORDER_WRAP)
-	# # dst = cv2.warpPerspective(dst, transform, dsize=(src.shape[1], src.shape[0]), borderMode=cv2.BORDER_WRAP)
 
-	# dst = cv2.warpPerspective(dst, h @ np.linalg.inv(transform), dsize=(src.shape[1], src.shape[0]))
-
-	# dst = cv2.warpPerspective(dst, h_inv, dsize=(src.shape[1], src.shape[0]))
-	# dst = cv2.warpPerspective(src, h, dsize=(
-	# 	int(max_bounds[0] - min_bounds[0]),
-	# 	int(max_bounds[1] - min_bounds[1])) )
-
-	# cv2.imwrite('abc.jpg', dst)
 	cv2.imwrite('abc.jpg', dst)
 
 
