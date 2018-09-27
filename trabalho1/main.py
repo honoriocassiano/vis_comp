@@ -17,6 +17,54 @@ def main():
 	points_world = [[0, 240], [336, 240], [336, 0], [0, 0]]
 
 	# 3120, 4160
+	points_bounds = [[0, 3120], [4160, 3120], [4160, 0], [0, 0]]
+
+
+	# vectors = np.array([
+	# 	[
+	# 		points_bounds[i][0] - points_img[i][0],
+	# 		points_bounds[i][1] - points_img[i][1]
+	# 	] for i in range(4) ]).T
+
+	vectors_world = np.array([
+		[
+			points_world[i][0] - points_world[i-1][0],
+			points_world[i][1] - points_world[i-1][1]
+		] for i in range(4) ])
+
+	vectors_square = np.array([
+		[
+			points_img[i][0] - points_img[i-1][0],
+			points_img[i][1] - points_img[i-1][1]
+		] for i in range(4) ])
+
+	vectors_img = np.array([
+		[
+			points_bounds[i][0] - points_bounds[i-1][0],
+			points_bounds[i][1] - points_bounds[i-1][1]
+		] for i in range(4) ])
+
+	denominator = np.linalg.norm(vectors_img, axis=0) ** 2
+
+	projections = vectors_img * (np.diag(vectors_square.T @ vectors_img) / denominator)
+
+	norms_img = np.linalg.norm(vectors_img, axis=1)
+	norms_proj = np.linalg.norm(projections, axis=1)
+	norms_world = np.linalg.norm(vectors_world, axis=1)
+	norms_square = np.linalg.norm(vectors_square, axis=1)
+
+	ratio_proj_img = norms_proj / norms_img
+	ratio_world_img = norms_world / norms_square
+	# print(vectors_img.shape)
+	# print(vectors_square.shape)
+	# print(norms)
+	# print(projections)
+	# print(norms_proj)
+	# print(norms_img)
+	print(ratio_world_img)
+	print(ratio_proj_img)
+
+
 
 	a = np.zeros((8, 8))
 	b = np.zeros(8)
@@ -65,40 +113,48 @@ def main():
 	src = cv2.imread('envelope_aleatorio.jpg')
 
 
-	bounds = [ 
-		[0, 3120, 1], [4160, 3120, 1], [4160, 0, 1], [0, 0, 1]
-	]
+	# points_img = [[0, 3120, 1], [4160, 3120, 1], [4160, 0, 1], [0, 0, 1]]).T
 	# bounds = [ [*p, 1] for p in points_img ]
 
-	min_bounds = [np.PINF, np.PINF]
-	max_bounds = [np.NINF, np.NINF]
+	# bounds_ = h_inv @ bounds
+	# bounds_ = bounds_[:2] / bounds_[2]
 
-	# print(h)
+	# max_b = bounds_.max(axis=1)
+	# min_b = bounds_.min(axis=1)
 
-	for b in bounds:
-		temp = h_inv @ b
-		temp = temp[:2] / temp[2]
-		# temp = temp[:2] / temp[2]
-		# print(bounds)
-		# print(b, temp)
-		# print(src.shape)
+	# print(bounds_)
+	# print(max_b)
+	# print(min_b)
 
-		print(temp)
+	# min_bounds = [np.PINF, np.PINF]
+	# max_bounds = [np.NINF, np.NINF]
 
-		if temp[0] < min_bounds[0]:
-			min_bounds[0] = temp[0]
+	# # print(h)
 
-		if temp[0] > max_bounds[0]:
-			max_bounds[0] = temp[0]
+	# for b in bounds:
+	# 	temp = h_inv @ b
+	# 	temp = temp[:2] / temp[2]
+	# 	# temp = temp[:2] / temp[2]
+	# 	# print(bounds)
+	# 	# print(b, temp)
+	# 	# print(src.shape)
+
+	# 	print(temp)
+
+	# 	if temp[0] < min_bounds[0]:
+	# 		min_bounds[0] = temp[0]
+
+	# 	if temp[0] > max_bounds[0]:
+	# 		max_bounds[0] = temp[0]
 
 
-		if temp[1] < min_bounds[1]:
-			min_bounds[1] = temp[1]
+	# 	if temp[1] < min_bounds[1]:
+	# 		min_bounds[1] = temp[1]
 
-		if temp[1] > max_bounds[1]:
-			max_bounds[1] = temp[1]
+	# 	if temp[1] > max_bounds[1]:
+	# 		max_bounds[1] = temp[1]
 
-	scale = src.shape[0]/ (max_bounds[0] - min_bounds[0])
+	# scale = src.shape[0]/ (max_bounds[0] - min_bounds[0])
 	transform = np.identity(3)
 
 	# transform[:2, 2] = [1000, 500]
