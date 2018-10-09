@@ -10,19 +10,31 @@ origin = None
 img = None
 # lines = [[]]
 lines = [
-	[np.array([0, 0, 1]), np.array([10, 0, 1])],
-	[np.array([0, 10, 1]), np.array([10, 10, 1])],
+	[np.array([477, 395, 1]), np.array([651, 508, 1])],
+	[np.array([308, 518, 1]), np.array([482, 668, 1])],
 
-	[np.array([0, 0, 1]), np.array([0, 10, 1])],
-	[np.array([10, 0, 1]), np.array([10, 10, 1])]
-	# [np.array([243, 224, 1]), np.array([113, 502, 1])],
-	# [np.array([744, 247, 1]), np.array([913, 517, 1])],
-	# [np.array([115, 506, 1]), np.array([908, 521, 1])],
-	# [np.array([245, 224, 1]), np.array([735, 242, 1])]
+	[np.array([615, 290, 1]), np.array([725, 210, 1])],
+	[np.array([784, 383, 1]), np.array([884, 287, 1])]
 ]
+# lines = [
+# 	[np.array([0, 0, 1]), np.array([10, 0, 1])],
+# 	[np.array([0, 10, 1]), np.array([10, 10, 1])],
+
+# 	[np.array([0, 0, 1]), np.array([0, 10, 1])],
+# 	[np.array([10, 0, 1]), np.array([10, 10, 1])]
+# 	# [np.array([243, 224, 1]), np.array([113, 502, 1])],
+# 	# [np.array([744, 247, 1]), np.array([913, 517, 1])],
+# 	# [np.array([115, 506, 1]), np.array([908, 521, 1])],
+# 	# [np.array([245, 224, 1]), np.array([735, 242, 1])]
+# ]
+
+
+def calc_homography(img, lines):
+
+	pass
+
 """
 np.set_printoptions(suppress=True)
-
 
 def main():
 
@@ -266,22 +278,43 @@ def draw_lines(screen):
 
 		ls.append(np.cross(l[0], l[1]))
 
+	
 	x1 = np.cross(ls[0], ls[1])
 	x2 = np.cross(ls[2], ls[3])
 
 	l_inf = np.cross(x1, x2)
+
 	# l1 = l1 / l1[2]
 	# l2 = l2 / l2[2]
-
-	# print(l1, l2, l_inf)
 	print(l_inf)
+
+	hp = np.identity(3)
+	hp[2] = l_inf
+
+	# hp = np.linalg.inv(hp)
+
+	print(hp)
+
+	# dst = cv2.warpPerspective(img, hp, dsize=(img.shape[1], img.shape[0]))
+	dst = cv2.warpPerspective(img, hp, dsize=(img.shape[1], img.shape[0]), borderMode=cv2.BORDER_WRAP)
+
+	# transform = np.identity(3)
+	# transform[0, 0] = transform[1, 1] = 1 / 10
+
+	# dst = cv2.warpPerspective(dst, transform, dsize=(img.shape[1], img.shape[0]))
+
+	cv2.imwrite('teste.jpg', dst)
+	# print(l1, l2, l_inf)
+	# print(l_inf)
+	
 
 
 def main():
 
 	global SCREEN, origin, img
 
-	img = cv2.imread('envelope_aleatorio.jpg')
+	# img = cv2.imread('envelope_aleatorio.jpg')
+	img = cv2.imread('piso.png')
 
 	pg.init()  # Initialize pygame
 
@@ -326,6 +359,8 @@ def main():
 		# print(type(screen))
 
 		pg.display.update() # Update pygame display
+
+		break
 
 if __name__ == '__main__':
 	main()
