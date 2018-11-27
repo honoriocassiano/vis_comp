@@ -2,29 +2,41 @@ import cv2
 import numpy as np
 
 
-np.set_printoptions(suppress=True)
+# np.set_printoptions(suppress=True)
+
+def get_size(img, M):
+	(h, w) = img.shape[:-1]
+
+	p1 = M @ np.array([0, 0, 1])
+	p2 = M @ np.array([w, 0, 1])
+	p3 = M @ np.array([0, h, 1])
+	p4 = M @ np.array([w, h, 1])
+
+	p1 = (p1 / p1[2])[:-1]
+	p2 = (p2 / p2[2])[:-1]
+	p3 = (p3 / p3[2])[:-1]
+	p4 = (p4 / p4[2])[:-1]
+
+	min_h = min(p1[1], p2[1])
+	max_h = max(p3[1], p4[1])
+
+	min_w = min(p1[0], p3[0])
+	max_w = max(p2[0], p4[0])
+
+	new_w = int(np.ceil(max_w - min_w))
+	new_h = int(np.ceil(max_h - min_h))
+
+	return (min_w, min_h, new_w, new_h)
 
 
 def main():
 
 	points_img = [[ 496, 2185 ], [3940, 2236], [3125, 1060], [1055, 975]]
 
-	# points_img = [[ 496, 3120 - 2185 ], [3940, 3120 - 2236], [3125, 3120 - 1060], [1055, 3120 - 975]]
-
-	# points_world = [[0, 3120], [4160, 3120], [4160, 0], [0, 0]]
-
-	# points_world = [[0+120, 240+120], [336+120, 240+120], [336+120, 0+120], [0+120, 0+120]]
 	points_world = [[0, 240], [336, 240], [336, 0], [0, 0]]
 
 	# 3120, 4160
 	points_bounds = [[0, 3120], [4160, 3120], [4160, 0], [0, 0]]
-
-
-	# vectors = np.array([
-	# 	[
-	# 		points_bounds[i][0] - points_img[i][0],
-	# 		points_bounds[i][1] - points_img[i][1]
-	# 	] for i in range(4) ]).T
 
 	vectors_world = np.array([
 		[
@@ -55,16 +67,9 @@ def main():
 
 	ratio_proj_img = norms_proj / norms_img
 	ratio_world_img = norms_world / norms_square
-	# print(vectors_img.shape)
-	# print(vectors_square.shape)
-	# print(norms)
-	# print(projections)
-	# print(norms_proj)
-	# print(norms_img)
-	print(ratio_world_img)
-	print(ratio_proj_img)
-
-
+	
+	# print(ratio_world_img)
+	# print(ratio_proj_img)
 
 	a = np.zeros((8, 8))
 	b = np.zeros(8)
@@ -94,77 +99,19 @@ def main():
 
 	x = np.linalg.solve(a, b)
 
-	# h = np.append(x, 1).reshape((3, 3))
 	h = np.append(x, 1).reshape((3, 3))
 	h_inv = np.linalg.inv(h)
 
-	# print(x)
-
-	# h[:2, :2] = h[:2, :2] * 2
-
-	# print(h)
-	# print(a)
-
-	# pts1 = np.float32([[56,65],[368,52],[28,387],[389,390]])
-	# pts2 = np.float32([[0,0],[300,0],[0,300],[300,300]])
-	
-	# M = cv.getPerspectiveTransform(pts1,pts2)
-	# print(type(M))
 	src = cv2.imread('envelope_aleatorio.jpg')
 
+	(min_w, min_h, new_w, new_h) = get_size(src, h_inv)
 
-	# points_img = [[0, 3120, 1], [4160, 3120, 1], [4160, 0, 1], [0, 0, 1]]).T
-	# bounds = [ [*p, 1] for p in points_img ]
-
-	# bounds_ = h_inv @ bounds
-	# bounds_ = bounds_[:2] / bounds_[2]
-
-	# max_b = bounds_.max(axis=1)
-	# min_b = bounds_.min(axis=1)
-
-	# print(bounds_)
-	# print(max_b)
-	# print(min_b)
-
-	# min_bounds = [np.PINF, np.PINF]
-	# max_bounds = [np.NINF, np.NINF]
-
-	# # print(h)
-
-	# for b in bounds:
-	# 	temp = h_inv @ b
-	# 	temp = temp[:2] / temp[2]
-	# 	# temp = temp[:2] / temp[2]
-	# 	# print(bounds)
-	# 	# print(b, temp)
-	# 	# print(src.shape)
-
-	# 	print(temp)
-
-	# 	if temp[0] < min_bounds[0]:
-	# 		min_bounds[0] = temp[0]
-
-	# 	if temp[0] > max_bounds[0]:
-	# 		max_bounds[0] = temp[0]
-
-
-	# 	if temp[1] < min_bounds[1]:
-	# 		min_bounds[1] = temp[1]
-
-	# 	if temp[1] > max_bounds[1]:
-	# 		max_bounds[1] = temp[1]
-
-	# scale = src.shape[0]/ (max_bounds[0] - min_bounds[0])
 	transform = np.identity(3)
+	transform[:2, 2] = [ -min_w, -min_h ]
 
-	# transform[:2, 2] = [1000, 500]
+	dst = cv2.warpPerspective(src, transform @ h_inv, dsize=(new_w, new_h))
 
-	dst = cv2.warpPerspective(src, transform, dsize=(src.shape[1], src.shape[0]))
-
-
-	dst = cv2.warpPerspective(dst, h_inv, dsize=(src.shape[1], src.shape[0]))
-
-	cv2.imwrite('abc.jpg', dst)
+	cv2.imwrite('envelope_aleatorio_ret.jpg', dst)
 
 
 if __name__ == '__main__':
