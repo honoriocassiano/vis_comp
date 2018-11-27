@@ -3,67 +3,23 @@ import cv2
 import numpy as np
 
 
-def detectAndDescribe(image):
-	# convert the image to grayscale
-	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-	# detect keypoints in the image
-	detector = cv2.FeatureDetector_create("SIFT")
-	kps = detector.detect(gray)
-
-	# extract features from the image
-	extractor = cv2.DescriptorExtractor_create("SIFT")
-	(kps, features) = extractor.compute(gray, kps)
-
-	# convert the keypoints from KeyPoint objects to NumPy
-	# arrays
-	kps = np.float32([kp.pt for kp in kps])
-
-	# return a tuple of keypoints and features
-	return (kps, features)
-
-
-def stitch(images):
-	d = [ detectAndDescribe(i) for i in images ]
-	M = [None] * (len(d) - 1)
-
-	for i in range(len(M)):
-		# match features between the two images
-		M[i] = matchKeypoints(d[i][0], d[i+1][0],
-			d[i][1], d[i+1][1])
-
-	# # if the match is None, then there aren't enough matched
-	# # keypoints to create a panorama
-	# if M is None:
-	# 	return None
-
 def main():
 	# imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 6) ]
+	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 3) ]
 
-	img1 = cv2.imread('data/1.jpeg')
-	img2 = cv2.imread('data/2.jpeg')
+	grays = [ cv2.cvtColor(i, cv2.COLOR_BGR2GRAY) for i in imgs ]
 
-	gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
 	orb = cv2.ORB_create()
-	# kp = sift.detect(gray, None)
-	# img1 = cv2.drawKeypoints(gray, kp, img1)
-	# cv2.imwrite('sift_keypoints1.jpg', img1)
 
-	gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-	# sift = cv2.ORB_create()
-	# kp = sift.detect(gray, None)
-	# img2 = cv2.drawKeypoints(gray, kp, img2)
-	# cv2.imwrite('sift_keypoints2.jpg', img2)
+	kp_des = [ orb.detectAndCompute(i, None) for i in grays ]
 
-	kp1, des1 = orb.detectAndCompute(img1, None)
-	kp2, des2 = orb.detectAndCompute(img2, None)
-	
 	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-	matches = bf.match(des1,des2)
+
+	matches = [ bf.match(kp_des[i][1], kp_des[i+1][1]) for i in range(len(kp_des) - 1) ]
 
 	# print(type(matches[0]))
 	# print(matches)
-	good = matches
+	# good = matches
 	# for m,n in matches:
 	# 	if m.distance < 0.7*n.distance:
 	# 		good.append(m)
@@ -74,16 +30,64 @@ def main():
 	if len(matches) > 0:
 		# print(good[0])
 
-		src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-		dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+		for i in range(len(matches)):
+			src_pts = np.float32([ kp_des[i][0][m.queryIdx].pt for m in matches[i] ]).reshape(-1,1,2)
+			dst_pts = np.float32([ kp_des[i+1][0][m.trainIdx].pt for m in matches[i] ]).reshape(-1,1,2)
 
-		M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+			M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
-		print(M)
+			# print(M)
+			# M[:, 2] = [ 0, 0, 1 ]
+			# print(imgs[i].shape)
+			(h, w) = imgs[i].shape[:-1]
 
-		tmp = cv2.warpPerspective(img1, M, dsize=img1.shape[:-1])
+			p1 = M @ np.array([0, 0, 1])
+			p2 = M @ np.array([w, 0, 1])
+			p3 = M @ np.array([0, h, 1])
+			p4 = M @ np.array([w, h, 1])
 
-		cv2.imwrite("result.jpg", tmp)
+			p1 = (p1 / p1[2])[:-1]
+			p2 = (p2 / p2[2])[:-1]
+			p3 = (p3 / p3[2])[:-1]
+			p4 = (p4 / p4[2])[:-1]
+
+			min_h = min(p1[1], p2[1])
+			max_h = max(p3[1], p4[1])
+
+			min_w = min(p1[0], p3[0])
+			max_w = max(p2[0], p4[0])
+
+			new_w = int(np.ceil(max_w - min_w))
+			new_h = int(np.ceil(max_h - min_h))
+			# print(p1 / p1[2])
+			# print(p2 / p2[2])
+			# print(p3 / p3[2])
+			# print(p4 / p4[2])
+
+			print(p1)
+			print(p2)
+			print(p3)
+			print(p4)
+
+			# M[:, 2] = [ 200, 0, 1 ]
+			tr = np.identity(3)
+			tr[:, 2] = [ -min_w, -min_h, 1 ]
+
+			tmp = cv2.warpPerspective(imgs[i], tr @ M, dsize=(new_w, new_h))
+			# tmp = cv2.warpPerspective(imgs[i], M, dsize=(w, h))
+
+			cv2.imwrite("result2_%d.jpg" % (i+1,), tmp)
+
+		# src_pts = np.float32([ kp1[m.queryIdx].pt for m in matches ]).reshape(-1,1,2)
+		# dst_pts = np.float32([ kp2[m.trainIdx].pt for m in matches ]).reshape(-1,1,2)
+
+		# M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+		# print(M)
+
+		# tmp = cv2.warpPerspective(img1, M, dsize=img1.shape[:-1])
+
+		# cv2.imwrite("result.jpg", tmp)
 
 if __name__ == '__main__':
 	main()
