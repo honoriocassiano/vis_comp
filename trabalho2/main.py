@@ -10,194 +10,37 @@ origin = None
 img = None
 # lines = [[]]
 lines = [
-	[np.array([477, 395, 1]), np.array([651, 508, 1])],
-	[np.array([308, 518, 1]), np.array([482, 668, 1])],
+	[ np.array([481, 669, 1]), np.array([170, 398, 1])],
+	[ np.array([652, 510, 1]), np.array([338, 296, 1])],
+	[ np.array([308, 515, 1]), np.array([613, 289, 1])],
+	[ np.array([173, 398, 1]), np.array([474, 211, 1])]
 
-	[np.array([615, 290, 1]), np.array([725, 210, 1])],
-	[np.array([784, 383, 1]), np.array([884, 287, 1])]
+
+	# [np.array([477, 395, 1]), np.array([651, 508, 1])],
+	# [np.array([308, 518, 1]), np.array([482, 668, 1])],
+
+	# [np.array([615, 290, 1]), np.array([725, 210, 1])],
+	# [np.array([784, 383, 1]), np.array([884, 287, 1])]
 ]
-# lines = [
-# 	[np.array([0, 0, 1]), np.array([10, 0, 1])],
-# 	[np.array([0, 10, 1]), np.array([10, 10, 1])],
 
-# 	[np.array([0, 0, 1]), np.array([0, 10, 1])],
-# 	[np.array([10, 0, 1]), np.array([10, 10, 1])]
-# 	# [np.array([243, 224, 1]), np.array([113, 502, 1])],
-# 	# [np.array([744, 247, 1]), np.array([913, 517, 1])],
-# 	# [np.array([115, 506, 1]), np.array([908, 521, 1])],
-# 	# [np.array([245, 224, 1]), np.array([735, 242, 1])]
-# ]
+ortho = [
+	[ np.array([403, 76, 1]), np.array([289, 238, 1]) ],
+	[ np.array([109, 122, 1]), np.array([466, 114, 1]) ],
+	[ np.array([168, 282, 1]), np.array([410, 194, 1]) ],
+	[ np.array([528, 152, 1]), np.array([405, 76, 1] )]
+
+
+	# [np.array([249, 206, 1]), np.array([317, 141, 1])],
+	# [np.array([317, 141, 1]), np.array([479, 140, 1])],
+
+	# [np.array([ 98, 113, 1]), np.array([212,  76, 1])],
+	# [np.array([212,  76, 1]), np.array([266, 108, 1])]
+]
 
 
 def calc_homography(img, lines):
 
 	pass
-
-"""
-np.set_printoptions(suppress=True)
-
-def main():
-
-	points_img = [[ 496, 2185 ], [3940, 2236], [3125, 1060], [1055, 975]]
-
-	# points_img = [[ 496, 3120 - 2185 ], [3940, 3120 - 2236], [3125, 3120 - 1060], [1055, 3120 - 975]]
-
-	# points_world = [[0, 3120], [4160, 3120], [4160, 0], [0, 0]]
-
-	# points_world = [[0+120, 240+120], [336+120, 240+120], [336+120, 0+120], [0+120, 0+120]]
-	points_world = [[0, 240], [336, 240], [336, 0], [0, 0]]
-
-	# 3120, 4160
-	points_bounds = [[0, 3120], [4160, 3120], [4160, 0], [0, 0]]
-
-
-	# vectors = np.array([
-	# 	[
-	# 		points_bounds[i][0] - points_img[i][0],
-	# 		points_bounds[i][1] - points_img[i][1]
-	# 	] for i in range(4) ]).T
-
-	vectors_world = np.array([
-		[
-			points_world[i][0] - points_world[i-1][0],
-			points_world[i][1] - points_world[i-1][1]
-		] for i in range(4) ])
-
-	vectors_square = np.array([
-		[
-			points_img[i][0] - points_img[i-1][0],
-			points_img[i][1] - points_img[i-1][1]
-		] for i in range(4) ])
-
-	vectors_img = np.array([
-		[
-			points_bounds[i][0] - points_bounds[i-1][0],
-			points_bounds[i][1] - points_bounds[i-1][1]
-		] for i in range(4) ])
-
-	denominator = np.linalg.norm(vectors_img, axis=0) ** 2
-
-	projections = vectors_img * (np.diag(vectors_square.T @ vectors_img) / denominator)
-
-	norms_img = np.linalg.norm(vectors_img, axis=1)
-	norms_proj = np.linalg.norm(projections, axis=1)
-	norms_world = np.linalg.norm(vectors_world, axis=1)
-	norms_square = np.linalg.norm(vectors_square, axis=1)
-
-	ratio_proj_img = norms_proj / norms_img
-	ratio_world_img = norms_world / norms_square
-	# print(vectors_img.shape)
-	# print(vectors_square.shape)
-	# print(norms)
-	# print(projections)
-	# print(norms_proj)
-	# print(norms_img)
-	print(ratio_world_img)
-	print(ratio_proj_img)
-
-
-
-	a = np.zeros((8, 8))
-	b = np.zeros(8)
-
-	for p in range(len(points_world)):
-
-		i = p*2
-
-		x = points_world[p][0]
-		y = points_world[p][1]
-
-		x_ = points_img[p][0]
-		y_ = points_img[p][1]
-
-		b[i] = x_
-		b[i + 1] = y_
-
-		a[i, :] = [ 
-				x, y, 1,
-				0, 0, 0,
-				-x * x_, -y * x_ ]
-
-		a[i + 1, :] = [ 
-				0, 0, 0,
-				x, y, 1,
-				-x * y_, -y * y_ ]
-
-	x = np.linalg.solve(a, b)
-
-	# h = np.append(x, 1).reshape((3, 3))
-	h = np.append(x, 1).reshape((3, 3))
-	h_inv = np.linalg.inv(h)
-
-	# print(x)
-
-	# h[:2, :2] = h[:2, :2] * 2
-
-	# print(h)
-	# print(a)
-
-	# pts1 = np.float32([[56,65],[368,52],[28,387],[389,390]])
-	# pts2 = np.float32([[0,0],[300,0],[0,300],[300,300]])
-	
-	# M = cv.getPerspectiveTransform(pts1,pts2)
-	# print(type(M))
-	src = cv2.imread('envelope_aleatorio.jpg')
-
-
-	# points_img = [[0, 3120, 1], [4160, 3120, 1], [4160, 0, 1], [0, 0, 1]]).T
-	# bounds = [ [*p, 1] for p in points_img ]
-
-	# bounds_ = h_inv @ bounds
-	# bounds_ = bounds_[:2] / bounds_[2]
-
-	# max_b = bounds_.max(axis=1)
-	# min_b = bounds_.min(axis=1)
-
-	# print(bounds_)
-	# print(max_b)
-	# print(min_b)
-
-	# min_bounds = [np.PINF, np.PINF]
-	# max_bounds = [np.NINF, np.NINF]
-
-	# # print(h)
-
-	# for b in bounds:
-	# 	temp = h_inv @ b
-	# 	temp = temp[:2] / temp[2]
-	# 	# temp = temp[:2] / temp[2]
-	# 	# print(bounds)
-	# 	# print(b, temp)
-	# 	# print(src.shape)
-
-	# 	print(temp)
-
-	# 	if temp[0] < min_bounds[0]:
-	# 		min_bounds[0] = temp[0]
-
-	# 	if temp[0] > max_bounds[0]:
-	# 		max_bounds[0] = temp[0]
-
-
-	# 	if temp[1] < min_bounds[1]:
-	# 		min_bounds[1] = temp[1]
-
-	# 	if temp[1] > max_bounds[1]:
-	# 		max_bounds[1] = temp[1]
-
-	# scale = src.shape[0]/ (max_bounds[0] - min_bounds[0])
-	transform = np.identity(3)
-
-	# transform[:2, 2] = [1000, 500]
-
-	dst = cv2.warpPerspective(src, transform, dsize=(src.shape[1], src.shape[0]))
-
-
-	dst = cv2.warpPerspective(dst, h_inv, dsize=(src.shape[1], src.shape[0]))
-
-	cv2.imwrite('abc.jpg', dst)
-"""
-
 
 # def pygame_to_cvimage(surface):
 # 	"""Convert a pygame surface into a cv image"""
@@ -227,35 +70,36 @@ def handle_events():
 			# print(pg.mouse.get_pos())
 			pos = np.array(pg.mouse.get_pos())
 
+			print(pos)
 
-			# print(pos[(pos - img.shape[:2]) > 0])
-			# c1 = pos < origin
-			# c2 = pos > (origin + img.shape[:2][::-1])
+			# # print(pos[(pos - img.shape[:2]) > 0])
+			# # c1 = pos < origin
+			# # c2 = pos > (origin + img.shape[:2][::-1])
 
-			# print(origin + img.shape[:2])
+			# # print(origin + img.shape[:2])
 
-			# print(pos)
-			# print(origin)
-			# print(c1)
-			# print(c2)
+			# # print(pos)
+			# # print(origin)
+			# # print(c1)
+			# # print(c2)
 
-			# if not pos[c1].shape[0] or not pos[c1].shape[0]:
-			if len(lines) < 5:
+			# # if not pos[c1].shape[0] or not pos[c1].shape[0]:
+			# if len(lines) < 5:
 
-				if len(lines[-1]) == 2:
-					lines.append([pos])
-				else:
-					lines[-1].append(pos)
+			# 	if len(lines[-1]) == 2:
+			# 		lines.append([pos])
+			# 	else:
+			# 		lines[-1].append(pos)
 
-				print(lines)
-				# if len(lines) >= 2:
-				# 	# if len(lines) % 2 == 1:
-				# 	# 	pg.draw.lines(screen, (255)*3, False, lines[:-1])
-				# 	# else:
-				# 	pg.draw.lines(screen, (255, 255, 255), False, lines)
+			# 	print(lines)
+			# 	# if len(lines) >= 2:
+			# 	# 	# if len(lines) % 2 == 1:
+			# 	# 	# 	pg.draw.lines(screen, (255)*3, False, lines[:-1])
+			# 	# 	# else:
+			# 	# 	pg.draw.lines(screen, (255, 255, 255), False, lines)
 
-				# 	print(lines)
-				# 	# print(lines)
+			# 	# 	print(lines)
+			# 	# 	# print(lines)
 
 		elif t == KEYDOWN:
 
@@ -265,20 +109,14 @@ def handle_events():
 				run = False
 
 
-def draw_lines(screen):
+def affine():
 	global lines
 
 	ls = []
 
-	# if len(lines) > 0:
 	for l in lines:
-		if len(l) == 2:
-			# print(l[0])
-			pg.draw.line(screen, (255, 255, 255), l[0][:2], l[1][:2])
-
 		ls.append(np.cross(l[0], l[1]))
 
-	
 	x1 = np.cross(ls[0], ls[1])
 	x2 = np.cross(ls[2], ls[3])
 
@@ -286,27 +124,84 @@ def draw_lines(screen):
 
 	# l1 = l1 / l1[2]
 	# l2 = l2 / l2[2]
-	print(l_inf)
+	# print(l_inf)
 
 	hp = np.identity(3)
-	hp[2] = l_inf
+	hp[2] = l_inf / l_inf[2]
 
 	# hp = np.linalg.inv(hp)
 
-	print(hp)
+	# print(hp)
 
 	# dst = cv2.warpPerspective(img, hp, dsize=(img.shape[1], img.shape[0]))
-	dst = cv2.warpPerspective(img, hp, dsize=(img.shape[1], img.shape[0]), borderMode=cv2.BORDER_WRAP)
+	dst = cv2.warpPerspective(img, hp, dsize=(img.shape[1], img.shape[0]))
 
 	# transform = np.identity(3)
 	# transform[0, 0] = transform[1, 1] = 1 / 10
 
 	# dst = cv2.warpPerspective(dst, transform, dsize=(img.shape[1], img.shape[0]))
 
-	cv2.imwrite('teste.jpg', dst)
+	# cv2.imwrite('teste.jpg', dst)
 	# print(l1, l2, l_inf)
 	# print(l_inf)
+	return dst
+
+
+def draw_lines(screen, lines):
+
+	for l in lines:
+		# TODO
+		if len(l) == 2:
+			pg.draw.line(screen, (255, 255, 255), l[0][:2], l[1][:2])
+
+
+def metric(img):
+	l1 = ortho[0][0] * ortho[0][1]
+	m1 = ortho[1][0] * ortho[1][1]
+
+	l2 = ortho[2][0] * ortho[2][1]
+	m2 = ortho[3][0] * ortho[3][1]
+
+
+	A = np.array([
+					[ l1[0] * m1[0], l1[0] * m1[1] + l1[1] * m1[0] ],
+					[ l2[0] * m2[0], l2[0] * m2[1] + l2[1] * m2[0] ]
+				])
+
+	# B = np.array([-l1[1] * m1[1], -l2[1] * m2[1]])
+	B = np.array([l1[1] * m1[1], l2[1] * m2[1]])
+
+	x = np.linalg.solve(A, B)
+
+	# print(np.array([l1, m1]).T)
+	# hht = np.zeros((3, 3))
+	kkt = np.zeros((2, 2))
+	kkt[0, 0] = x[0]
+	kkt[0, 1] = kkt[1, 0] = x[1]
+	kkt[1, 1] = 1
+
+	# print(kkt)
+
+	k = np.linalg.cholesky(kkt)
 	
+
+	# (d, u) = np.linalg.eig(kkt)
+
+	# print(d)
+
+	# d = np.sqrt(d)
+
+	# k = u @ np.diag(d) @ u.T
+
+
+
+	H = np.identity(3)
+
+	H[:-1, :-1] = k
+
+	dst = cv2.warpPerspective(img, H, dsize=(img.shape[1], img.shape[0]))
+	
+	cv2.imwrite('teste2.jpg', dst)
 
 
 def main():
@@ -334,6 +229,13 @@ def main():
 
 	img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
 
+	# draw_lines(None)
+
+	# metric()
+
+
+
+
 	# origin = (SCREEN - img.shape[:2][::-1]) / 2
 	SCREEN = img.shape[:2][::-1]
 
@@ -341,26 +243,26 @@ def main():
 	
 	# print(scale)
 
-	# surface = cvimage_to_pygame(img)
+	tr = affine()
 
-	surface = cvimage_to_pygame(img)
+	surface = cvimage_to_pygame(tr)
+	# surface = cvimage_to_pygame(tr)
+
+	metric(tr)
 
 	while run:
 		screen.fill([0, 0, 0])
-		screen.blit(surface, (0, 0))
 
 		handle_events()
 
-		draw_lines(screen)
+		screen.blit(surface, (0, 0))
 
-		# screen.blit(cvimage_to_pygame(img), (0, 0))
-		
+		draw_lines(screen, ortho)
 
-		# print(type(screen))
 
 		pg.display.update() # Update pygame display
 
-		break
+		# break
 
 if __name__ == '__main__':
 	main()
