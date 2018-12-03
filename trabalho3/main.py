@@ -69,45 +69,8 @@ def main():
 
 			(min_w, min_h, new_w, new_h) = bounds[i] = get_size(imgs[i], M)
 
-			# tr = np.identity(3)
-			# tr[:, 2] = [ -min_w, -min_h, 1 ]
-
-			# trs[i] = tr
 			Ms[i] = M
-			# bounds[i] = imgs[i]
 
-
-
-			# # tmp = cv2.warpPerspective(imgs[i], tr @ M, dsize=(new_w, new_h))
-			# tmp = cv2.warpPerspective(imgs[i], tr @ M, dsize=(imgs[i+1].shape[0] - min_w, imgs[i+1].shape[1] - min_h))
-			# tmp2 = cv2.warpPerspective(imgs[i+1], tr, dsize=(imgs[i+1].shape[0] - min_w, imgs[i+1].shape[1] - min_h))
-			# # tmp = cv2.warpPerspective(imgs[i], M, dsize=(w, h))
-
-			# mask1 = tmp.sum(axis=2).astype(bool)
-			# mask2 = tmp2.sum(axis=2).astype(bool)
-
-			# mask = np.logical_and(mask1, mask2)
-
-			# # print(mask2)
-			# # np.ma.array(tmp + tmp2, mask=)
-
-			# # tmp3 = np.zeros(tmp2.shape)
-
-			# t1 = tmp.copy()
-			# t2 = tmp2.copy()
-
-			# t1[ mask ] //= 2
-			# t2[ mask ] //= 2
-
-			# tmp3 = t1 + t2
-			
-			# # cv2.imwrite("result2_%d.jpg" % (i+1,), tmp)
-			# # cv2.imwrite("result3_%d.jpg" % (i+1,), tmp2)
-			# cv2.imwrite("panorama.jpg", tmp3)
-
-
-
-		# first = len(imgs) // 2
 		first = len(imgs) - 1
 		curr_M = np.identity(3)
 		curr_tr = np.identity(3)
@@ -119,22 +82,7 @@ def main():
 		# for i in range(first, len(Ms)):
 		for i in range(first-1, -1, -1):
 
-			# (min_w, min_h) = bounds[i][:2]
-
-			# tr = np.identity(3)
-			# tr[:, 2] = [ -min_w, -min_h, 1 ]
-			# # curr_tr = curr_tr @ tr
-			# curr_tr = tr
-
-			# (curr_min_w, curr_min_h, curr_new_w, curr_new_h) = get_size(curr_img, curr_tr @ curr_M)
-			# (min_w, min_h, new_w, new_h) = get_size(imgs[i], curr_M @ Ms[i])
-
-			# (curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, curr_tr @ curr_M)
-			
-
 			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_M @ Ms[i])
-
-
 
 			(min_w, min_h) = bounds[i][:2]
 
@@ -144,10 +92,9 @@ def main():
 			curr_tr = tr
 
 
+			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_tr @ curr_M @ Ms[i])
+			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, curr_tr)
 
-			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, curr_tr @ curr_M)
-
-			# print(min_w, min_h, new_w, new_h)
 			min_w = min(curr_min_w, new_min_w)
 			max_w = max(curr_max_w, new_max_w)
 
@@ -155,9 +102,9 @@ def main():
 			max_h = max(curr_max_h, new_max_h)
 
 
-			tmp1 = cv2.warpPerspective(imgs[i], curr_tr @ curr_M @ Ms[i], dsize=( (max_w-min_w)+min_w, (max_h-min_h) ))
+			tmp1 = cv2.warpPerspective(imgs[i], curr_tr @ curr_M @ Ms[i], dsize=( (max_w-min_w)+min_w, (max_h-min_h)+min_h ))
 			# tmp1 = cv2.warpPerspective(imgs[i], curr_M @ Ms[i], dsize=( (max_w-min_w)+min_w, (max_h-min_h)+min_h ))
-			tmp2 = cv2.warpPerspective(curr_img, curr_tr, dsize=((max_w-min_w)+min_w, (max_h-min_h) ))
+			tmp2 = cv2.warpPerspective(curr_img, curr_tr, dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h ))
 
 
 
@@ -166,10 +113,6 @@ def main():
 
 			mask = np.logical_and(mask1, mask2)
 
-			# print(mask2)
-			# np.ma.array(tmp + tmp2, mask=)
-
-			# tmp3 = np.zeros(tmp2.shape)
 
 			tmp1[ mask ] //= 2
 			tmp2[ mask ] //= 2
