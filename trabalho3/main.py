@@ -22,18 +22,11 @@ def get_size(img, M):
 	min_w = int(min(p1[0], p3[0]))
 	max_w = int(max(p2[0], p4[0]))
 
-	# new_w = max_w - min_w
-	# new_h = max_h - min_h
-
-	# return (min_w, min_h, new_w, new_h)
 	return (min_w, min_h, max_w, max_h)
 
 
 def main():
-	# imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 6) ]
-	# imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 3) ]
-	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 6) ]
-	# imgs = [ cv2.imread('panorama2.jpg'), cv2.imread('data/1.jpeg') ]
+	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 3) ]
 
 	grays = [ cv2.cvtColor(i, cv2.COLOR_BGR2GRAY) for i in imgs ]
 
@@ -41,102 +34,73 @@ def main():
 
 	kp_des = [ orb.detectAndCompute(i, None) for i in grays ]
 
+	# Find matches
 	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
 	matches = [ bf.match(kp_des[i][1], kp_des[i+1][1]) for i in range(len(kp_des) - 1) ]
 
-	# trs = [ None ] * len(matches)
-	Ms = [ None ] * len(matches)
-	bounds = [ None ] * len(matches)
+	# Homographies
+	Hs = [ None ] * len(matches)
 
-	# print(type(matches[0]))
-	# print(matches)
-	# good = matches
-	# for m,n in matches:
-	# 	if m.distance < 0.7*n.distance:
-	# 		good.append(m)
-
-	# matches = sorted(matches, key=lambda x: x.distance)
-	# cv2.drawMatches(img1,kp1,img2,kp2,matches[:10], flags=2)
-	# print(len(matches))
 	if len(matches) > 0:
 
 		for i in range(len(matches)):
+
 			src_pts = np.float32([ kp_des[i][0][m.queryIdx].pt for m in matches[i] ]).reshape(-1,1,2)
 			dst_pts = np.float32([ kp_des[i+1][0][m.trainIdx].pt for m in matches[i] ]).reshape(-1,1,2)
 
 			M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
-			(min_w, min_h, new_w, new_h) = bounds[i] = get_size(imgs[i], M)
-
-			Ms[i] = M
+			Hs[i] = M
 
 		first = len(imgs) - 1
 		curr_M = np.identity(3)
-		curr_tr = np.identity(3)
 
 		curr_img = imgs[first]
-		
-		
 
-		# for i in range(first, len(Ms)):
 		for i in range(first-1, -1, -1):
 
-			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_M @ Ms[i])
+			# Bounds of new image (transformed)
+			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_M @ Hs[i])
 
-			(min_w, min_h) = bounds[i][:2]
-
+			# Translate matrix ()
 			tr = np.identity(3)
 			tr[:, 2] = [ -new_min_w, -new_min_h, 1 ]
-			# curr_tr = curr_tr @ tr
-			curr_tr = tr
 
+			# Bounds of ranslated coordinates
+			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], tr @ curr_M @ Hs[i])
 
-			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_tr @ curr_M @ Ms[i])
-			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, curr_tr)
+			# Bounds of current panorama
+			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, tr)
 
+			# New panorama bounds
 			min_w = min(curr_min_w, new_min_w)
 			max_w = max(curr_max_w, new_max_w)
 
 			min_h = min(curr_min_h, new_min_h)
 			max_h = max(curr_max_h, new_max_h)
 
+			# Transform images
+			new_image = cv2.warpPerspective(imgs[i], tr @ curr_M @ Hs[i], dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h))
+			panorama = cv2.warpPerspective(curr_img, tr, dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h ))
 
-			tmp1 = cv2.warpPerspective(imgs[i], curr_tr @ curr_M @ Ms[i], dsize=( (max_w-min_w)+min_w, (max_h-min_h)+min_h ))
-			# tmp1 = cv2.warpPerspective(imgs[i], curr_M @ Ms[i], dsize=( (max_w-min_w)+min_w, (max_h-min_h)+min_h ))
-			tmp2 = cv2.warpPerspective(curr_img, curr_tr, dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h ))
-
-
-
-			mask1 = tmp1.sum(axis=2).astype(bool)
-			mask2 = tmp2.sum(axis=2).astype(bool)
+			# Check overlap pixels
+			mask1 = new_image.sum(axis=2).astype(bool)
+			mask2 = panorama.sum(axis=2).astype(bool)
 
 			mask = np.logical_and(mask1, mask2)
 
+			# Set mean values for these pixels
+			new_image[ mask ] //= 2
+			panorama[ mask ] //= 2
 
-			tmp1[ mask ] //= 2
-			tmp2[ mask ] //= 2
-
-			tmp3 = tmp1 + tmp2
+			# Create new panorama
+			new_panorama = new_image + panorama
 			
-			# cv2.imwrite("result_abc_%d.jpg" % (i+1,), tmp2)
-			# cv2.imwrite("result3_%d.jpg" % (i+1,), tmp2)
-			cv2.imwrite("panorama.jpg", tmp3)
+			curr_img = new_panorama
+			curr_M = tr @ curr_M @ Hs[i]
 
-			curr_img = tmp3
-			curr_M = tr @ curr_M @ Ms[i]
+		cv2.imwrite("panorama.jpg", new_panorama)
 
-
-		# src_pts = np.float32([ kp1[m.queryIdx].pt for m in matches ]).reshape(-1,1,2)
-		# dst_pts = np.float32([ kp2[m.trainIdx].pt for m in matches ]).reshape(-1,1,2)
-
-		# M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-
-		# print(M)
-
-		# tmp = cv2.warpPerspective(img1, M, dsize=img1.shape[:-1])
-
-		# cv2.imwrite("result.jpg", tmp)
 
 if __name__ == '__main__':
 	main()
