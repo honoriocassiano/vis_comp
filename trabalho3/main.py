@@ -3,6 +3,31 @@ import cv2
 import numpy as np
 
 
+def get_size(img, M):
+	(h, w) = img.shape[:-1]
+
+	p1 = M @ np.array([0, 0, 1])
+	p2 = M @ np.array([w, 0, 1])
+	p3 = M @ np.array([0, h, 1])
+	p4 = M @ np.array([w, h, 1])
+
+	p1 = (p1 / p1[2])[:-1]
+	p2 = (p2 / p2[2])[:-1]
+	p3 = (p3 / p3[2])[:-1]
+	p4 = (p4 / p4[2])[:-1]
+
+	min_h = int(min(p1[1], p2[1]))
+	max_h = int(max(p3[1], p4[1]))
+
+	min_w = int(min(p1[0], p3[0]))
+	max_w = int(max(p2[0], p4[0]))
+
+	new_w = max_w - min_w
+	new_h = max_h - min_h
+
+	return (min_w, min_h, new_w, new_h)
+
+
 def main():
 	# imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 6) ]
 	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 3) ]
@@ -19,6 +44,7 @@ def main():
 
 	trs = [ None ] * len(matches)
 	Ms = [ None ] * len(matches)
+	bounds = [ None ] * len(matches)
 
 	# print(type(matches[0]))
 	# print(matches)
@@ -31,7 +57,6 @@ def main():
 	# cv2.drawMatches(img1,kp1,img2,kp2,matches[:10], flags=2)
 	# print(len(matches))
 	if len(matches) > 0:
-		# print(good[0])
 
 		for i in range(len(matches)):
 			src_pts = np.float32([ kp_des[i][0][m.queryIdx].pt for m in matches[i] ]).reshape(-1,1,2)
@@ -39,40 +64,8 @@ def main():
 
 			M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
-			# print(M)
-			# M[:, 2] = [ 0, 0, 1 ]
-			# print(imgs[i].shape)
-			(h, w) = imgs[i].shape[:-1]
+			(min_w, min_h, new_w, new_h) = get_size(imgs[i], M)
 
-			p1 = M @ np.array([0, 0, 1])
-			p2 = M @ np.array([w, 0, 1])
-			p3 = M @ np.array([0, h, 1])
-			p4 = M @ np.array([w, h, 1])
-
-			p1 = (p1 / p1[2])[:-1]
-			p2 = (p2 / p2[2])[:-1]
-			p3 = (p3 / p3[2])[:-1]
-			p4 = (p4 / p4[2])[:-1]
-
-			min_h = int(min(p1[1], p2[1]))
-			max_h = int(max(p3[1], p4[1]))
-
-			min_w = int(min(p1[0], p3[0]))
-			max_w = int(max(p2[0], p4[0]))
-
-			new_w = int(np.ceil(max_w - min_w))
-			new_h = int(np.ceil(max_h - min_h))
-			# print(p1 / p1[2])
-			# print(p2 / p2[2])
-			# print(p3 / p3[2])
-			# print(p4 / p4[2])
-
-			print(p1)
-			print(p2)
-			print(p3)
-			print(p4)
-
-			# M[:, 2] = [ 200, 0, 1 ]
 			tr = np.identity(3)
 			tr[:, 2] = [ -min_w, -min_h, 1 ]
 
