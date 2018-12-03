@@ -31,8 +31,9 @@ def get_size(img, M):
 
 def main():
 	# imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 6) ]
-	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 3) ]
-	# imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 4) ]
+	# imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 3) ]
+	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 6) ]
+	# imgs = [ cv2.imread('panorama2.jpg'), cv2.imread('data/1.jpeg') ]
 
 	grays = [ cv2.cvtColor(i, cv2.COLOR_BGR2GRAY) for i in imgs ]
 
@@ -118,17 +119,33 @@ def main():
 		# for i in range(first, len(Ms)):
 		for i in range(first-1, -1, -1):
 
-			# (min_w, min_h, new_w, new_h) = bounds[i]
+			# (min_w, min_h) = bounds[i][:2]
 
-			tr = np.identity(3)
-			tr[:, 2] = [ -min_w, -min_h, 1 ]
-			curr_tr = curr_tr @ tr
+			# tr = np.identity(3)
+			# tr[:, 2] = [ -min_w, -min_h, 1 ]
+			# # curr_tr = curr_tr @ tr
+			# curr_tr = tr
 
 			# (curr_min_w, curr_min_h, curr_new_w, curr_new_h) = get_size(curr_img, curr_tr @ curr_M)
 			# (min_w, min_h, new_w, new_h) = get_size(imgs[i], curr_M @ Ms[i])
 
-			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, curr_tr @ curr_M)
+			# (curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, curr_tr @ curr_M)
+			
+
 			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_M @ Ms[i])
+
+
+
+			(min_w, min_h) = bounds[i][:2]
+
+			tr = np.identity(3)
+			tr[:, 2] = [ -new_min_w, -new_min_h, 1 ]
+			# curr_tr = curr_tr @ tr
+			curr_tr = tr
+
+
+
+			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, curr_tr @ curr_M)
 
 			# print(min_w, min_h, new_w, new_h)
 			min_w = min(curr_min_w, new_min_w)
@@ -140,7 +157,7 @@ def main():
 
 			tmp1 = cv2.warpPerspective(imgs[i], curr_tr @ curr_M @ Ms[i], dsize=( (max_w-min_w)+min_w, (max_h-min_h) ))
 			# tmp1 = cv2.warpPerspective(imgs[i], curr_M @ Ms[i], dsize=( (max_w-min_w)+min_w, (max_h-min_h)+min_h ))
-			tmp2 = cv2.warpPerspective(curr_img, curr_tr @ curr_M, dsize=((max_w-min_w)+min_w, (max_h-min_h) ))
+			tmp2 = cv2.warpPerspective(curr_img, curr_tr, dsize=((max_w-min_w)+min_w, (max_h-min_h) ))
 
 
 
@@ -162,6 +179,9 @@ def main():
 			# cv2.imwrite("result_abc_%d.jpg" % (i+1,), tmp2)
 			# cv2.imwrite("result3_%d.jpg" % (i+1,), tmp2)
 			cv2.imwrite("panorama.jpg", tmp3)
+
+			curr_img = tmp3
+			curr_M = tr @ curr_M @ Ms[i]
 
 
 		# src_pts = np.float32([ kp1[m.queryIdx].pt for m in matches ]).reshape(-1,1,2)
