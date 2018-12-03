@@ -156,11 +156,16 @@ def draw_lines(screen, lines):
 
 
 def metric(img):
-	l1 = ortho[0][0] * ortho[0][1]
-	m1 = ortho[1][0] * ortho[1][1]
+	l1 = np.cross(ortho[0][0], ortho[0][1])
+	m1 = np.cross(ortho[1][0], ortho[1][1])
 
-	l2 = ortho[2][0] * ortho[2][1]
-	m2 = ortho[3][0] * ortho[3][1]
+	l2 = np.cross(ortho[2][0], ortho[2][1])
+	m2 = np.cross(ortho[3][0], ortho[3][1])
+	# l1 = ortho[0][0] * ortho[0][1]
+	# m1 = ortho[1][0] * ortho[1][1]
+
+	# l2 = ortho[2][0] * ortho[2][1]
+	# m2 = ortho[3][0] * ortho[3][1]
 
 
 	A = np.array([
@@ -168,8 +173,8 @@ def metric(img):
 					[ l2[0] * m2[0], l2[0] * m2[1] + l2[1] * m2[0] ]
 				])
 
-	# B = np.array([-l1[1] * m1[1], -l2[1] * m2[1]])
-	B = np.array([l1[1] * m1[1], l2[1] * m2[1]])
+	B = np.array([-l1[1] * m1[1], -l2[1] * m2[1]])
+	# B = np.array([l1[1] * m1[1], l2[1] * m2[1]])
 
 	x = np.linalg.solve(A, B)
 
@@ -199,7 +204,8 @@ def metric(img):
 
 	H[:-1, :-1] = k
 
-	dst = cv2.warpPerspective(img, H, dsize=(img.shape[1], img.shape[0]))
+	# dst = cv2.warpPerspective(img, H, dsize=(img.shape[1], img.shape[0]))
+	dst = cv2.warpPerspective(img, np.linalg.inv(H), dsize=(img.shape[1], img.shape[0]))
 	
 	cv2.imwrite('teste2.jpg', dst)
 
