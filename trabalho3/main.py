@@ -26,7 +26,7 @@ def get_size(img, M):
 
 
 def main():
-	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 4) ]
+	imgs = [ cv2.imread('data/%d.jpeg' % i) for i in range(1, 6) ]
 
 	grays = [ cv2.cvtColor(i, cv2.COLOR_BGR2GRAY) for i in imgs ]
 
@@ -64,6 +64,7 @@ def main():
 
 		curr_img = imgs[first]
 
+		# Starting at right side
 		# for i in range(first-1, -1, -1):
 
 		# 	# Bounds of new image (transformed)
@@ -107,6 +108,7 @@ def main():
 		# 	curr_M = tr @ curr_M @ Hs[i]
 
 
+		# Starting at left side
 		for i in range(first, len(Hs)):
 
 			# Bounds of new image (transformed)
