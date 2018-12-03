@@ -17,6 +17,9 @@ def main():
 
 	matches = [ bf.match(kp_des[i][1], kp_des[i+1][1]) for i in range(len(kp_des) - 1) ]
 
+	trs = [ None ] * len(matches)
+	Ms = [ None ] * len(matches)
+
 	# print(type(matches[0]))
 	# print(matches)
 	# good = matches
@@ -51,11 +54,11 @@ def main():
 			p3 = (p3 / p3[2])[:-1]
 			p4 = (p4 / p4[2])[:-1]
 
-			min_h = min(p1[1], p2[1])
-			max_h = max(p3[1], p4[1])
+			min_h = int(min(p1[1], p2[1]))
+			max_h = int(max(p3[1], p4[1]))
 
-			min_w = min(p1[0], p3[0])
-			max_w = max(p2[0], p4[0])
+			min_w = int(min(p1[0], p3[0]))
+			max_w = int(max(p2[0], p4[0]))
 
 			new_w = int(np.ceil(max_w - min_w))
 			new_h = int(np.ceil(max_h - min_h))
@@ -73,10 +76,43 @@ def main():
 			tr = np.identity(3)
 			tr[:, 2] = [ -min_w, -min_h, 1 ]
 
-			tmp = cv2.warpPerspective(imgs[i], tr @ M, dsize=(new_w, new_h))
+			trs[i] = tr
+			Ms[i] = M
+
+			# tmp = cv2.warpPerspective(imgs[i], tr @ M, dsize=(new_w, new_h))
+			tmp = cv2.warpPerspective(imgs[i], tr @ M, dsize=(imgs[i+1].shape[0] - min_w, imgs[i+1].shape[1] - min_h))
+			tmp2 = cv2.warpPerspective(imgs[i+1], tr, dsize=(imgs[i+1].shape[0] - min_w, imgs[i+1].shape[1] - min_h))
 			# tmp = cv2.warpPerspective(imgs[i], M, dsize=(w, h))
 
-			cv2.imwrite("result2_%d.jpg" % (i+1,), tmp)
+			mask1 = tmp.sum(axis=2).astype(bool)
+			mask2 = tmp2.sum(axis=2).astype(bool)
+
+			mask = np.logical_and(mask1, mask2)
+
+			# print(mask2)
+			# np.ma.array(tmp + tmp2, mask=)
+
+			# tmp3 = np.zeros(tmp2.shape)
+
+			t1 = tmp.copy()
+			t2 = tmp2.copy()
+
+			t1[ mask ] //= 2
+			t2[ mask ] //= 2
+
+			tmp3 = t1 + t2
+			# tmp3 = tmp + tmp2
+
+			# tmp3[ mask ] //= 2
+
+			
+			# tmp3[-min_h:-1, -min_w:-1] = tmp2
+			# tmp3 += tmp2
+			# tmp3[0:new_h, 0:new_w] = tmp
+
+			# cv2.imwrite("result2_%d.jpg" % (i+1,), tmp)
+			# cv2.imwrite("result3_%d.jpg" % (i+1,), tmp2)
+			cv2.imwrite("panorama.jpg", tmp3)
 
 		# src_pts = np.float32([ kp1[m.queryIdx].pt for m in matches ]).reshape(-1,1,2)
 		# dst_pts = np.float32([ kp2[m.trainIdx].pt for m in matches ]).reshape(-1,1,2)
