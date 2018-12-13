@@ -51,75 +51,36 @@ def main():
 			M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
 			
-			# if i < (len(imgs) // 2):
-			# 	Hs[i] = M
-			# else:
-			# 	Hs[i] = np.linalg.inv(M)
-			Hs[i] = np.linalg.inv(M)
+			if i < (len(imgs) // 2):
+				Hs[i] = M
+			else:
+				Hs[i] = np.linalg.inv(M)
+			# Hs[i] = np.linalg.inv(M)
 
 		# first = len(imgs) - 1
-		first = 0
-		# first = len(imgs) // 2
+		# first = 0
+		first = len(imgs) // 2
 		curr_M = np.identity(3)
 
 		curr_img = imgs[first]
 
+		# Panorama translation
+		panorama_tr = np.identity(3)
+
 		# Starting at right side
-		# for i in range(first-1, -1, -1):
-
-		# 	# Bounds of new image (transformed)
-		# 	(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_M @ Hs[i])
-
-		# 	# Translate matrix ()
-		# 	tr = np.identity(3)
-		# 	tr[:, 2] = [ -new_min_w, -new_min_h, 1 ]
-
-		# 	# Bounds of ranslated coordinates
-		# 	(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], tr @ curr_M @ Hs[i])
-
-		# 	# Bounds of current panorama
-		# 	(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, tr)
-
-		# 	# New panorama bounds
-		# 	min_w = min(curr_min_w, new_min_w)
-		# 	max_w = max(curr_max_w, new_max_w)
-
-		# 	min_h = min(curr_min_h, new_min_h)
-		# 	max_h = max(curr_max_h, new_max_h)
-
-		# 	# Transform images
-		# 	new_image = cv2.warpPerspective(imgs[i], tr @ curr_M @ Hs[i], dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h))
-		# 	panorama = cv2.warpPerspective(curr_img, tr, dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h ))
-
-		# 	# Check overlap pixels
-		# 	mask1 = new_image.sum(axis=2).astype(bool)
-		# 	mask2 = panorama.sum(axis=2).astype(bool)
-
-		# 	mask = np.logical_and(mask1, mask2)
-
-		# 	# Set mean values for these pixels
-		# 	new_image[ mask ] //= 2
-		# 	panorama[ mask ] //= 2
-
-		# 	# Create new panorama
-		# 	new_panorama = new_image + panorama
-			
-		# 	curr_img = new_panorama
-		# 	curr_M = tr @ curr_M @ Hs[i]
-
-
-		# Starting at left side
-		for i in range(first, len(Hs)):
+		for i in range(first-1, -1, -1):
 
 			# Bounds of new image (transformed)
-			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i+1], curr_M @ Hs[i])
+			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], curr_M @ Hs[i])
 
 			# Translate matrix ()
 			tr = np.identity(3)
-			tr[:, 2] = [ 0, -new_min_h, 1 ]
+			tr[:, 2] = [ -new_min_w, -new_min_h, 1 ]
+
+			panorama_tr = panorama_tr @ tr
 
 			# Bounds of ranslated coordinates
-			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i+1], tr @ curr_M @ Hs[i])
+			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i], tr @ curr_M @ Hs[i])
 
 			# Bounds of current panorama
 			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, tr)
@@ -132,7 +93,52 @@ def main():
 			max_h = max(curr_max_h, new_max_h)
 
 			# Transform images
-			new_image = cv2.warpPerspective(imgs[i+1], tr @ curr_M @ Hs[i], dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h))
+			new_image = cv2.warpPerspective(imgs[i], tr @ curr_M @ Hs[i], dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h))
+			panorama = cv2.warpPerspective(curr_img, tr, dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h ))
+
+			# Check overlap pixels
+			mask1 = new_image.sum(axis=2).astype(bool)
+			mask2 = panorama.sum(axis=2).astype(bool)
+
+			mask = np.logical_and(mask1, mask2)
+
+			# Set mean values for these pixels
+			new_image[ mask ] //= 2
+			panorama[ mask ] //= 2
+
+			# Create new panorama
+			new_panorama = new_image + panorama
+			
+			curr_img = new_panorama
+			curr_M = tr @ curr_M @ Hs[i]
+
+		curr_M = np.identity(3)
+
+		# Starting at left side
+		for i in range(first, len(Hs)):
+
+			# Bounds of new image (transformed)
+			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i+1], curr_M @ Hs[i])
+
+			# Translate matrix ()
+			tr = np.identity(3)
+			tr[:, 2] = [ 0, -new_min_h, 1 ]
+
+			# Bounds of ranslated coordinates
+			(new_min_w, new_min_h, new_max_w, new_max_h) = get_size(imgs[i+1], panorama_tr @ tr @ curr_M @ Hs[i])
+
+			# Bounds of current panorama
+			(curr_min_w, curr_min_h, curr_max_w, curr_max_h) = get_size(curr_img, tr)
+
+			# New panorama bounds
+			min_w = min(curr_min_w, new_min_w)
+			max_w = max(curr_max_w, new_max_w)
+
+			min_h = min(curr_min_h, new_min_h)
+			max_h = max(curr_max_h, new_max_h)
+
+			# Transform images
+			new_image = cv2.warpPerspective(imgs[i+1], panorama_tr @ tr @ curr_M @ Hs[i], dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h))
 			panorama = cv2.warpPerspective(curr_img, tr, dsize=((max_w-min_w)+min_w, (max_h-min_h)+min_h ))
 
 			# Check overlap pixels
